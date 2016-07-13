@@ -26,6 +26,7 @@
 
 #import <PureLayout/PureLayout.h>
 #import "CTAssetCheckmark.h"
+#import "CTAssetsPickerDefines.h"
 #import "NSBundle+CTAssetsPickerController.h"
 #import "UIImage+CTAssetsPickerController.h"
 
@@ -118,6 +119,18 @@
 #pragma mark Customizing Appearance
 
 /**
+ *  To set margin of the label from the edges.
+ *
+ *  @param margin The margin from the edges.
+ *
+ *  @see setMargin:forVerticalEdge:horizontalEdge:
+ */
+- (void)setMargin:(CGFloat)margin
+{
+    [self setMargin:margin forVerticalEdge:NSLayoutAttributeRight horizontalEdge:NSLayoutAttributeBottom];
+}
+
+/**
  *  To set margin of the check mark from specific edges.
  *
  *  @param margin The margin from the edges.
@@ -144,10 +157,8 @@
 {
     if (!self.didSetupConstraints)
     {
-        CGSize size = [UIImage ctassetsPickerImageNamed:@"CheckmarkShadow"].size;
-        
         [NSLayoutConstraint autoSetPriority:UILayoutPriorityRequired forConstraints:^{
-            [self autoSetDimensionsToSize:size];
+            [self autoSetDimensionsToSize:CTAssetLabelSize];
         }];
         
         [self.shadowImageView autoPinEdgesToSuperviewEdgesWithInsets:UIEdgeInsetsZero];

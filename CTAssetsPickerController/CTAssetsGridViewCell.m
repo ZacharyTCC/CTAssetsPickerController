@@ -27,6 +27,8 @@
 #import <PureLayout/PureLayout.h>
 #import "CTAssetsPickerDefines.h"
 #import "CTAssetsGridViewCell.h"
+#import "CTAssetsGridSelectIconView.h"
+#import "CTAssetCheckmark.h"
 #import "CTAssetsGridSelectedView.h"
 #import "PHAsset+CTAssetsPickerController.h"
 #import "NSDateFormatter+CTAssetsPickerController.h"
@@ -38,6 +40,7 @@
 
 @property (nonatomic, strong) PHAsset *asset;
 
+@property (nonatomic, strong) CTAssetsGridSelectIconView *selectIconView;
 @property (nonatomic, strong) UIImageView *disabledImageView;
 @property (nonatomic, strong) UIView *disabledView;
 @property (nonatomic, strong) UIView *highlightedView;
@@ -76,6 +79,11 @@
 {
     CTAssetThumbnailView *thumbnailView = [CTAssetThumbnailView newAutoLayoutView];
     self.backgroundView = thumbnailView;
+    
+    CTAssetsGridSelectIconView *selectIconView = [CTAssetsGridSelectIconView newAutoLayoutView];
+    selectIconView.alpha = 1.0;
+    self.selectIconView = selectIconView;
+    [self addSubview:self.selectIconView];
     
     UIImage *disabledImage = [UIImage ctassetsPickerImageNamed:@"GridDisabledAsset"];
     disabledImage = [disabledImage imageWithRenderingMode:UIImageRenderingModeAlwaysTemplate];

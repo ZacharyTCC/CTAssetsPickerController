@@ -26,7 +26,10 @@
 
 #import <PureLayout/PureLayout.h>
 #import "CTAssetSelectionButton.h"
+#import "CTAssetsPickerDefines.h"
+#import "CTAssetsGridSelectIconView.h"
 #import "CTAssetCheckmark.h"
+#import "CTAssetSelectionLabel.h"
 #import "NSBundle+CTAssetsPickerController.h"
 #import "UIImage+CTAssetsPickerController.h"
 
@@ -34,8 +37,9 @@
 
 @interface CTAssetSelectionButton ()
 
+@property (nonatomic, strong) CTAssetsGridSelectIconView *backgroundView;
 @property (nonatomic, strong) CTAssetCheckmark *checkmark;
-@property (nonatomic, strong) UIImageView *backgroundView;
+@property (nonatomic, strong) CTAssetSelectionLabel *selectionIndexLabel;
 
 @property (nonatomic, assign) BOOL didSetupConstraints;
 
@@ -58,6 +62,7 @@
         
         [self setupViews];
         [self localize];
+        self.showsSelectionIndex = NO;
     }
     
     return self;
@@ -68,8 +73,7 @@
 - (void)setupViews
 {
     // Background
-    UIImage *backgroundImage = [UIImage ctassetsPickerImageNamed:@"CheckmarkUnselected"];
-    UIImageView *backgroundView = [[UIImageView alloc] initWithImage:backgroundImage];
+    CTAssetsGridSelectIconView *backgroundView = [CTAssetsGridSelectIconView newAutoLayoutView];
     backgroundView.userInteractionEnabled = NO;
     self.backgroundView = backgroundView;
     
@@ -82,6 +86,23 @@
     self.checkmark = checkmark;
     
     [self addSubview:self.checkmark];
+    
+    // Selection Label
+    CTAssetSelectionLabel *selectionIndexLabel = [CTAssetSelectionLabel newAutoLayoutView];
+    selectionIndexLabel.userInteractionEnabled = NO;
+    selectionIndexLabel.hidden = YES;
+    self.selectionIndexLabel = selectionIndexLabel;
+    
+    [self addSubview:self.selectionIndexLabel];
+    
+    CTAssetsGridSelectIconView *backgroundViewAppearance = [CTAssetsGridSelectIconView appearanceWhenContainedIn:[self class], nil];
+    [backgroundViewAppearance setMargin:0.0];
+    
+    CTAssetCheckmark *checkmarkAppearance = [CTAssetCheckmark appearanceWhenContainedIn:[self class], nil];
+    [checkmarkAppearance setMargin:0.0];
+    
+    CTAssetSelectionLabel *selectionIndexLabelAppearance = [CTAssetSelectionLabel appearanceWhenContainedIn:[self class], nil];
+    [selectionIndexLabelAppearance setMargin:0.0];
 }
 
 - (void)localize
@@ -93,14 +114,13 @@
 {
     if (!self.didSetupConstraints)
     {
-        CGSize size = [UIImage ctassetsPickerImageNamed:@"CheckmarkUnselected"].size;
-        
         [NSLayoutConstraint autoSetPriority:UILayoutPriorityRequired forConstraints:^{
-            [self autoSetDimensionsToSize:size];
+            [self autoSetDimensionsToSize:CTAssetLabelSize];
         }];
         
-        [self.backgroundView autoCenterInSuperview];
-        [self.checkmark autoCenterInSuperview];
+//        [self.backgroundView autoCenterInSuperview];
+//        [self.checkmark autoCenterInSuperview];
+//        [self.selectionIndexLabel autoCenterInSuperview];
         
         self.didSetupConstraints = YES;
     }
@@ -108,15 +128,48 @@
     [super updateConstraints];
 }
 
+#pragma mark - Accessors
+
+- (void)setShowsSelectionIndex:(BOOL)showsSelectionIndex
+{
+    _showsSelectionIndex = showsSelectionIndex;
+    
+    if (showsSelectionIndex)
+    {
+        self.checkmark.hidden = YES;
+        self.selectionIndexLabel.hidden = NO;
+    }
+    else
+    {
+        self.checkmark.hidden = NO;
+        self.selectionIndexLabel.hidden = YES;
+    }
+}
+
+- (void)setSelectionIndex:(NSUInteger)selectionIndex
+{
+    _selectionIndex = selectionIndex;
+    self.selectionIndexLabel.text = [NSString stringWithFormat:@"%lu", (unsigned long)(selectionIndex + 1)];
+}
+
 #pragma mark - States
 
 - (void)setSelected:(BOOL)selected
 {
     super.selected = selected;
-    self.checkmark.hidden = !selected;
     
-    self.accessibilityLabel = (selected) ? CTAssetsPickerLocalizedString(@"Deselect", nil) : CTAssetsPickerLocalizedString(@"Select", nil);
+    if (self.showsSelectionIndex)
+    {
+        self.selectionIndexLabel.hidden = !selected;
+        
+        self.accessibilityLabel = (selected) ? CTAssetsPickerLocalizedString(@"Deselect", nil) : self.selectionIndexLabel.text;
+    }
+    else
+    {
+        self.checkmark.hidden = !selected;
+        
+        self.accessibilityLabel = (selected) ? CTAssetsPickerLocalizedString(@"Deselect", nil) : CTAssetsPickerLocalizedString(@"Select", nil);
+    }
 }
-
 
 @end

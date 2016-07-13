@@ -24,6 +24,7 @@
  
  */
 
+#import "CTAssetsPickerController.h"
 #import "CTAssetsPageViewController.h"
 #import "CTAssetsPageView.h"
 #import "CTAssetItemViewController.h"
@@ -40,6 +41,7 @@
 @interface CTAssetsPageViewController ()
 <UIPageViewControllerDataSource, UIPageViewControllerDelegate>
 
+@property (nonatomic, weak) CTAssetsPickerController *picker;
 
 @property (nonatomic, assign) BOOL allowsSelection;
 
@@ -102,6 +104,13 @@
     [self removeNotificationObserver];
 }
 
+- (void)viewWillAppear:(BOOL)animated
+{
+    [super viewWillAppear:animated];
+    
+    [self setupDoneButton];
+}
+
 - (BOOL)prefersStatusBarHidden
 {
     if (self.traitCollection.verticalSizeClass == UIUserInterfaceSizeClassCompact)
@@ -119,6 +128,21 @@
     self.pageView = [CTAssetsPageView new];
     [self.view insertSubview:self.pageView atIndex:0];
     [self.view setNeedsUpdateConstraints];
+}
+
+- (void)setupDoneButton
+{
+    if (self.navigationItem.rightBarButtonItem == nil)
+    {
+        NSString *title = (self.picker.doneButtonTitle) ?
+        self.picker.doneButtonTitle : CTAssetsPickerLocalizedString(@"Done", nil);
+        
+        self.navigationItem.rightBarButtonItem =
+        [[UIBarButtonItem alloc] initWithTitle:title
+                                         style:UIBarButtonItemStyleDone
+                                        target:self.picker
+                                        action:@selector(finishPickingAssets:)];
+    }
 }
 
 - (void)setupButtons
@@ -144,6 +168,14 @@
         
         self.pauseButton = pauseButton;
     }
+}
+
+
+#pragma mark - Accessors
+
+- (CTAssetsPickerController *)picker
+{
+    return (CTAssetsPickerController *)self.splitViewController.parentViewController;
 }
 
 
@@ -235,6 +267,10 @@
         CTAssetItemViewController *page = [CTAssetItemViewController assetItemViewControllerForAsset:beforeAsset];
         page.allowsSelection = self.allowsSelection;
         
+        if (self.statusBarHidden) {
+            [page enterFullscreen];
+        }
+        
         return page;
     }
 
@@ -252,6 +288,10 @@
         PHAsset *afterAsset = self.assets[(index + 1)];
         CTAssetItemViewController *page = [CTAssetItemViewController assetItemViewControllerForAsset:afterAsset];
         page.allowsSelection = self.allowsSelection;
+        
+        if (self.statusBarHidden) {
+            [page enterFullscreen];
+        }
         
         return page;
     }
@@ -365,7 +405,6 @@
         [self.pageView exitFullscreen];
         [self fadeInControls:self.navigationController];
     }
-    
 }
 
 - (void)fadeInControls:(UINavigationController *)nav

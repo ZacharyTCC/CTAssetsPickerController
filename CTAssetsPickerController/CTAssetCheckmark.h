@@ -39,6 +39,15 @@
  */
 
 /**
+*  To set margin of the label from the edges.
+*
+*  @param margin The margin from the edges.
+*
+*  @see setMargin:forVerticalEdge:horizontalEdge:
+*/
+- (void)setMargin:(CGFloat)margin UI_APPEARANCE_SELECTOR;
+
+/**
  *  To set margin of the check mark from specific edges.
  *
  *  @param margin The margin from the edges.

@@ -37,6 +37,9 @@ NS_ASSUME_NONNULL_BEGIN
 
 + (CTAssetItemViewController *)assetItemViewControllerForAsset:(PHAsset *)asset;
 
+- (void)enterFullscreen;
+- (void)exitFullscreen;
+
 - (void)playAsset:(nullable id)sender;
 - (void)pauseAsset:(nullable id)sender;
 

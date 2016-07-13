@@ -29,6 +29,7 @@
 #import "CTAssetsPickerController.h"
 #import "CTAssetItemViewController.h"
 #import "CTAssetScrollView.h"
+#import "CTAssetSelectionView.h"
 #import "NSBundle+CTAssetsPickerController.h"
 #import "PHAsset+CTAssetsPickerController.h"
 #import "PHImageManager+CTAssetsPickerController.h"
@@ -40,6 +41,8 @@
 
 @property (nonatomic, weak) CTAssetsPickerController *picker;
 
+@property (nonatomic, assign, getter = isSelectionViewHidden) BOOL selectionViewHidden;
+
 @property (nonatomic, strong) PHAsset *asset;
 @property (nonatomic, strong) UIImage *image;
 
@@ -47,6 +50,7 @@
 @property (nonatomic, assign) PHImageRequestID imageRequestID;
 @property (nonatomic, assign) PHImageRequestID playerItemRequestID;
 @property (nonatomic, strong) CTAssetScrollView *scrollView;
+@property (nonatomic, strong) CTAssetSelectionView *selectionView;
 
 @property (nonatomic, assign) BOOL didSetupConstraints;
 
@@ -80,6 +84,12 @@
 {
     [super viewDidLoad];
     [self setupViews];
+    [self addNotificationObserver];
+}
+
+- (void)dealloc
+{
+    [self removeNotificationObserver];
 }
 
 - (void)viewWillAppear:(BOOL)animated
@@ -127,10 +137,16 @@
 - (void)setupViews
 {
     CTAssetScrollView *scrollView = [CTAssetScrollView newAutoLayoutView];
-    scrollView.allowsSelection = self.allowsSelection;
-    
     self.scrollView = scrollView;
     [self.view addSubview:self.scrollView];
+    
+    CTAssetSelectionView *selectionView = [CTAssetSelectionView newAutoLayoutView];
+    selectionView.allowsSelection = self.allowsSelection;
+    selectionView.hidden = !self.allowsSelection;
+    selectionView.alpha = (self.isSelectionViewHidden) ? 0.0 : 1.0;
+    self.selectionView = selectionView;
+    [self.view addSubview:self.selectionView];
+    
     [self.view layoutIfNeeded];
 }
 
@@ -139,7 +155,10 @@
     CTAssetPlayButton *playButton = self.scrollView.playButton;
     [playButton addTarget:self action:@selector(playAsset:) forControlEvents:UIControlEventTouchUpInside];
     
-    CTAssetSelectionButton *selectionButton = self.scrollView.selectionButton;
+    CTAssetSelectionButton *selectionButton = self.selectionView.selectionButton;
+    
+    selectionButton.showsSelectionIndex = self.picker.showsSelectionIndex;
+    selectionButton.selectionIndex = [self.picker.selectedAssets indexOfObject:self.asset];
 
     selectionButton.enabled  = [self assetScrollView:self.scrollView shouldEnableAsset:self.asset];
     selectionButton.selected = [self.picker.selectedAssets containsObject:self.asset];
@@ -148,6 +167,38 @@
     [selectionButton addTarget:self action:@selector(selectionButtonTouchUpInside:) forControlEvents:UIControlEventTouchUpInside];
 }
 
+#pragma mark - Notification observer
+
+- (void)addNotificationObserver
+{
+    NSNotificationCenter *center = [NSNotificationCenter defaultCenter];
+    
+    [center addObserver:self
+               selector:@selector(assetScrollViewDidTap:)
+                   name:CTAssetScrollViewDidTapNotification
+                 object:nil];
+}
+
+- (void)removeNotificationObserver
+{
+    NSNotificationCenter *center = [NSNotificationCenter defaultCenter];
+    
+    [center removeObserver:self name:CTAssetScrollViewDidTapNotification object:nil];
+}
+
+#pragma mark - Notification events
+
+- (void)assetScrollViewDidTap:(NSNotification *)notification
+{
+    if (self.isSelectionViewHidden)
+    {
+        [self exitFullscreen];
+    }
+    else
+    {
+        [self enterFullscreen];
+    }
+}
 
 #pragma mark - Cancel request
 
@@ -171,6 +222,7 @@
     if (self.playerItemRequestID)
     {
         [self.scrollView stopActivityAnimating];
+        [self.selectionView stopActivityAnimating];
         [self.imageManager cancelImageRequest:self.playerItemRequestID];
     }
 }
@@ -217,6 +269,7 @@
 - (PHImageRequestOptions *)imageRequestOptions
 {
     PHImageRequestOptions *options  = [PHImageRequestOptions new];
+    options.synchronous             = YES;
     options.networkAccessAllowed    = YES;
     options.progressHandler         = ^(double progress, NSError *error, BOOL *stop, NSDictionary *info) {
         dispatch_async(dispatch_get_main_queue(), ^{
@@ -233,6 +286,7 @@
 - (void)requestAssetPlayerItem:(id)sender
 {
     [self.scrollView startActivityAnimating];
+    [self.selectionView startActivityAnimating];
     
     PHVideoRequestOptions *options = [self videoRequestOptions];
     
@@ -278,6 +332,7 @@
 - (void)showRequestVideoError:(NSError *)error title:(NSString *)title
 {
     [self.scrollView stopActivityAnimating];
+    [self.selectionView stopActivityAnimating];
     [self showRequestError:error title:title];
 }
 
@@ -296,6 +351,28 @@
     [alert addAction:action];
     
     [self presentViewController:alert animated:YES completion:nil];
+}
+
+#pragma mark - Fading views
+
+- (void)enterFullscreen
+{
+    self.selectionViewHidden = YES;
+    
+    [UIView animateWithDuration:0.2
+                     animations:^{
+                         self.selectionView.alpha = 0.0;
+                     }];
+}
+
+- (void)exitFullscreen
+{
+    self.selectionViewHidden = NO;
+    
+    [UIView animateWithDuration:0.2
+                     animations:^{
+                         self.selectionView.alpha = 1.0;
+                     }];
 }
 
 
@@ -333,19 +410,18 @@
 {
     PHAsset *asset = self.asset;
     CTAssetScrollView *scrollView = self.scrollView;
-    CTAssetSelectionButton *selectionButton = scrollView.selectionButton;
-    
+    CTAssetSelectionButton *selectionButton = self.selectionView.selectionButton;
     
     if (!selectionButton.selected)
     {
         if ([self assetScrollView:scrollView shouldSelectAsset:asset])
         {
             [self.picker selectAsset:asset];
+            selectionButton.selectionIndex = [self.picker.selectedAssets indexOfObject:asset];
             [selectionButton setSelected:YES];
             [self assetScrollView:scrollView didSelectAsset:asset];
         }
     }
-    
     else
     {
         if ([self assetScrollView:scrollView shouldDeselectAsset:asset])

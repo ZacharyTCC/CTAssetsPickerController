@@ -27,7 +27,6 @@
 #import <UIKit/UIKit.h>
 #import "CTAssetItemViewController.h"
 #import "CTAssetPlayButton.h"
-#import "CTAssetSelectionButton.h"
 
 
 NS_ASSUME_NONNULL_BEGIN
@@ -39,14 +38,11 @@ extern NSString * const CTAssetScrollViewPlayerWillPauseNotification;
 
 @interface CTAssetScrollView : UIScrollView
 
-@property (nonatomic, assign) BOOL allowsSelection;
-
 @property (nonatomic, strong, readonly, nullable) UIImage *image;
 @property (nonatomic, strong, readonly, nullable) AVPlayer *player;
 
 @property (nonatomic, strong, readonly) UIImageView *imageView;
 @property (nonatomic, strong, readonly) CTAssetPlayButton *playButton;
-@property (nonatomic, strong, readonly) CTAssetSelectionButton *selectionButton;
 
 
 - (void)startActivityAnimating;

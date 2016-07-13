@@ -31,6 +31,7 @@
 #import <CTAssetsPickerController/CTAssetsGridView.h>
 #import <CTAssetsPickerController/CTAssetsGridViewFooter.h>
 #import <CTAssetsPickerController/CTAssetsGridViewCell.h>
+#import <CTAssetsPickerController/CTAssetsGridSelectIconView.h>
 #import <CTAssetsPickerController/CTAssetsGridSelectedView.h>
 #import <CTAssetsPickerController/CTAssetCheckmark.h>
 #import <CTAssetsPickerController/CTAssetSelectionLabel.h>
@@ -115,6 +116,12 @@
     CTAssetsGridViewCell *assetsGridViewCell = [CTAssetsGridViewCell appearance];
     assetsGridViewCell.highlightedColor = [UIColor colorWithWhite:1 alpha:0.3];
     
+    CTAssetsGridSelectIconView *assetsGridSelectIconView = [CTAssetsGridSelectIconView appearance];
+    assetsGridSelectIconView.borderWidth = 1.0;
+    assetsGridSelectIconView.borderColor = [UIColor whiteColor];
+    [assetsGridSelectIconView setSize:CGSizeMake(24.0, 24.0)];
+    [assetsGridSelectIconView setMargin:4.0 forVerticalEdge:NSLayoutAttributeRight horizontalEdge:NSLayoutAttributeTop];
+    
     // selected grid view
     CTAssetsGridSelectedView *assetsGridSelectedView = [CTAssetsGridSelectedView appearance];
     assetsGridSelectedView.selectedBackgroundColor = [UIColor colorWithWhite:0 alpha:0.5];
@@ -124,7 +131,7 @@
     // check mark
     CTAssetCheckmark *checkmark = [CTAssetCheckmark appearance];
     checkmark.tintColor = self.color1;
-    [checkmark setMargin:0.0 forVerticalEdge:NSLayoutAttributeRight horizontalEdge:NSLayoutAttributeTop];
+    [checkmark setMargin:4.0 forVerticalEdge:NSLayoutAttributeRight horizontalEdge:NSLayoutAttributeTop];
     
     // selection label
     CTAssetSelectionLabel *assetSelectionLabel = [CTAssetSelectionLabel appearance];
@@ -194,6 +201,12 @@
     assetsGridSelectedView.selectedBackgroundColor = nil;
     assetsGridSelectedView.tintColor = nil;
     assetsGridSelectedView.borderWidth = 0.0;
+    
+    CTAssetsGridSelectIconView *assetsGridSelectIconView = [CTAssetsGridSelectIconView appearance];
+    assetsGridSelectIconView.borderWidth = 0.0;
+    assetsGridSelectIconView.borderColor = nil;
+    [assetsGridSelectIconView setSize:CGSizeZero];
+    [assetsGridSelectIconView setMargin:0.0 forVerticalEdge:NSLayoutAttributeRight horizontalEdge:NSLayoutAttributeBottom];
     
     CTAssetCheckmark *checkmark = [CTAssetCheckmark appearance];
     checkmark.tintColor = nil;

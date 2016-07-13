@@ -31,6 +31,7 @@
 #import "CTAssetsGridView.h"
 #import "CTAssetsGridViewLayout.h"
 #import "CTAssetsGridViewCell.h"
+#import "CTAssetsGridSelectIconView.h"
 #import "CTAssetsGridViewFooter.h"
 #import "CTAssetsPickerNoAssetsView.h"
 #import "CTAssetsPageViewController.h"
@@ -408,9 +409,9 @@ NSString * const CTAssetsGridViewFooterIdentifier = @"CTAssetsGridViewFooterIden
 
 - (void)updateTitle:(NSArray *)selectedAssets
 {
-    if (selectedAssets.count > 0)
-        self.title = self.picker.selectedAssetsString;
-    else
+//    if (selectedAssets.count > 0)
+//        self.title = self.picker.selectedAssetsString;
+//    else
         self.title = self.assetCollection.localizedTitle;
 }
 
@@ -420,6 +421,12 @@ NSString * const CTAssetsGridViewFooterIdentifier = @"CTAssetsGridViewFooterIden
         self.navigationItem.rightBarButtonItem.enabled = YES;
     else
         self.navigationItem.rightBarButtonItem.enabled = (self.picker.selectedAssets.count > 0);
+    
+    NSString *title = (self.picker.doneButtonTitle) ? self.picker.doneButtonTitle : CTAssetsPickerLocalizedString(@"Done", nil);
+    NSString *buttonTitle = (self.picker.selectedAssets.count > 0) ? [NSString stringWithFormat:@"%@(%d)", title, self.picker.selectedAssets.count] : title;
+    [UIView setAnimationsEnabled:NO];
+    self.navigationItem.rightBarButtonItem.title = buttonTitle;
+    [UIView setAnimationsEnabled:YES];
 }
 
 
@@ -461,27 +468,79 @@ NSString * const CTAssetsGridViewFooterIdentifier = @"CTAssetsGridViewFooterIden
 
 - (void)addGestureRecognizer
 {
-    UILongPressGestureRecognizer *longPress =
-    [[UILongPressGestureRecognizer alloc] initWithTarget:self action:@selector(pushPageViewController:)];
+    UITapGestureRecognizer *tap = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(tapGestureRecognizer:)];
     
-    [self.collectionView addGestureRecognizer:longPress];
+    [self.collectionView addGestureRecognizer:tap];
 }
 
 
-#pragma mark - Push assets page view controller
+#pragma mark - Tap gesture recognizer
 
-- (void)pushPageViewController:(UILongPressGestureRecognizer *)longPress
+- (void)tapGestureRecognizer:(UITapGestureRecognizer *)tap
 {
-    if (longPress.state == UIGestureRecognizerStateBegan)
+    if (tap.state == UIGestureRecognizerStateEnded)
     {
-        CGPoint point           = [longPress locationInView:self.collectionView];
+        CGPoint point           = [tap locationInView:self.collectionView];
         NSIndexPath *indexPath  = [self.collectionView indexPathForItemAtPoint:point];
         
-        CTAssetsPageViewController *vc = [[CTAssetsPageViewController alloc] initWithFetchResult:self.fetchResult];
-        vc.allowsSelection = YES;
-        vc.pageIndex = indexPath.item;
+        CTAssetsGridViewCell *cell = [self.collectionView cellForItemAtIndexPath:indexPath];
         
-        [self.navigationController pushViewController:vc animated:YES];
+        CTAssetsGridSelectIconView *iconView = nil;
+        for (UIView *subview in cell.subviews) {
+            if ([subview isKindOfClass:[CTAssetsGridSelectIconView class]]) {
+                iconView = subview;
+                break;
+            }
+        }
+        
+        PHAsset *asset = [self assetAtIndexPath:indexPath];
+        
+        CGRect selectableArea = CGRectInset(iconView.frame, -10, -10);
+        CGPoint pointAtCell = [self.collectionView convertPoint:point toView:cell];
+        
+        if (CGRectContainsPoint(selectableArea, pointAtCell)) {
+            if (cell.selected) {
+                if ([self.picker.delegate respondsToSelector:@selector(assetsPickerController:shouldDeselectAsset:)]) {
+                    if (![self.picker.delegate assetsPickerController:self.picker shouldDeselectAsset:asset]) {
+                        return;
+                    }
+                }
+                
+                cell.selected = NO;
+                
+                [self.picker deselectAsset:asset];
+                
+                if ([self.picker.delegate respondsToSelector:@selector(assetsPickerController:didDeselectAsset:)]) {
+                    [self.picker.delegate assetsPickerController:self.picker didDeselectAsset:asset];
+                }
+            }
+            else {
+                if (!cell.isEnabled) {
+                    return ;
+                }
+                else if ([self.picker.delegate respondsToSelector:@selector(assetsPickerController:shouldSelectAsset:)]) {
+                    
+                    if (![self.picker.delegate assetsPickerController:self.picker shouldSelectAsset:asset]) {
+                        return;
+                    }
+                }
+                
+                cell.selected = YES;
+                
+                [self.picker selectAsset:asset];
+                
+                if ([self.picker.delegate respondsToSelector:@selector(assetsPickerController:didSelectAsset:)]) {
+                    [self.picker.delegate assetsPickerController:self.picker didSelectAsset:asset];
+                }
+            }
+        }
+        else {
+            CTAssetsPageViewController *vc = [[CTAssetsPageViewController alloc] initWithFetchResult:self.fetchResult];
+            vc.allowsSelection = YES;
+            vc.pageIndex = indexPath.item;
+            
+            [self.navigationController pushViewController:vc animated:YES];
+        }
     }
 }
 
@@ -731,46 +790,50 @@ NSString * const CTAssetsGridViewFooterIdentifier = @"CTAssetsGridViewFooterIden
 
 - (BOOL)collectionView:(UICollectionView *)collectionView shouldSelectItemAtIndexPath:(NSIndexPath *)indexPath
 {
-    PHAsset *asset = [self assetAtIndexPath:indexPath];
+    return NO;
     
-    CTAssetsGridViewCell *cell = (CTAssetsGridViewCell *)[collectionView cellForItemAtIndexPath:indexPath];
-    
-    if (!cell.isEnabled)
-        return NO;
-    else if ([self.picker.delegate respondsToSelector:@selector(assetsPickerController:shouldSelectAsset:)])
-        return [self.picker.delegate assetsPickerController:self.picker shouldSelectAsset:asset];
-    else
-        return YES;
+//    PHAsset *asset = [self assetAtIndexPath:indexPath];
+//    
+//    CTAssetsGridViewCell *cell = (CTAssetsGridViewCell *)[collectionView cellForItemAtIndexPath:indexPath];
+//    
+//    if (!cell.isEnabled)
+//        return NO;
+//    else if ([self.picker.delegate respondsToSelector:@selector(assetsPickerController:shouldSelectAsset:)])
+//        return [self.picker.delegate assetsPickerController:self.picker shouldSelectAsset:asset];
+//    else
+//        return YES;
 }
 
 - (void)collectionView:(UICollectionView *)collectionView didSelectItemAtIndexPath:(NSIndexPath *)indexPath
 {
-    PHAsset *asset = [self assetAtIndexPath:indexPath];
-    
-    [self.picker selectAsset:asset];
-    
-    if ([self.picker.delegate respondsToSelector:@selector(assetsPickerController:didSelectAsset:)])
-        [self.picker.delegate assetsPickerController:self.picker didSelectAsset:asset];
+//    PHAsset *asset = [self assetAtIndexPath:indexPath];
+//    
+//    [self.picker selectAsset:asset];
+//    
+//    if ([self.picker.delegate respondsToSelector:@selector(assetsPickerController:didSelectAsset:)])
+//        [self.picker.delegate assetsPickerController:self.picker didSelectAsset:asset];
 }
 
 - (BOOL)collectionView:(UICollectionView *)collectionView shouldDeselectItemAtIndexPath:(NSIndexPath *)indexPath
 {
-    PHAsset *asset = [self assetAtIndexPath:indexPath];
+    return NO;
     
-    if ([self.picker.delegate respondsToSelector:@selector(assetsPickerController:shouldDeselectAsset:)])
-        return [self.picker.delegate assetsPickerController:self.picker shouldDeselectAsset:asset];
-    else
-        return YES;
+//    PHAsset *asset = [self assetAtIndexPath:indexPath];
+//    
+//    if ([self.picker.delegate respondsToSelector:@selector(assetsPickerController:shouldDeselectAsset:)])
+//        return [self.picker.delegate assetsPickerController:self.picker shouldDeselectAsset:asset];
+//    else
+//        return YES;
 }
 
 - (void)collectionView:(UICollectionView *)collectionView didDeselectItemAtIndexPath:(NSIndexPath *)indexPath
 {
-    PHAsset *asset = [self assetAtIndexPath:indexPath];
-    
-    [self.picker deselectAsset:asset];
-    
-    if ([self.picker.delegate respondsToSelector:@selector(assetsPickerController:didDeselectAsset:)])
-        [self.picker.delegate assetsPickerController:self.picker didDeselectAsset:asset];
+//    PHAsset *asset = [self assetAtIndexPath:indexPath];
+//    
+//    [self.picker deselectAsset:asset];
+//    
+//    if ([self.picker.delegate respondsToSelector:@selector(assetsPickerController:didDeselectAsset:)])
+//        [self.picker.delegate assetsPickerController:self.picker didDeselectAsset:asset];
 }
 
 - (BOOL)collectionView:(UICollectionView *)collectionView shouldHighlightItemAtIndexPath:(NSIndexPath *)indexPath

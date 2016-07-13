@@ -91,17 +91,17 @@
         {
             // iPhone 6+ landscape
             if (traits.horizontalSizeClass == UIUserInterfaceSizeClassRegular)
-                return 4;
+                return 3;
             // iPhone landscape
             else if (traits.verticalSizeClass == UIUserInterfaceSizeClassCompact)
                 return 6;
             // iPhone portrait
             else
-                return 4;
+                return 3;
             break;
         }
         default:
-            return 4;
+            return 3;
             break;
     }
 }

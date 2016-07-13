@@ -28,4 +28,7 @@
 
 @interface CTAssetSelectionButton : UIControl
 
+@property (nonatomic, assign) BOOL showsSelectionIndex;
+@property (nonatomic, assign) NSUInteger selectionIndex;
+
 @end
