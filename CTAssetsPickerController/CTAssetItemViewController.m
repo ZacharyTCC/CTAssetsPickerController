@@ -269,7 +269,7 @@
 - (PHImageRequestOptions *)imageRequestOptions
 {
     PHImageRequestOptions *options  = [PHImageRequestOptions new];
-    options.synchronous             = YES;
+    options.synchronous             = NO;
     options.networkAccessAllowed    = YES;
     options.progressHandler         = ^(double progress, NSError *error, BOOL *stop, NSDictionary *info) {
         dispatch_async(dispatch_get_main_queue(), ^{
